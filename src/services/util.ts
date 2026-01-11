@@ -27,10 +27,15 @@ export function findWordUseNextLine(words: string[], search: string) {
 export function cleanText(word: string) {
   return word.replaceAll("\r", "");
 }
-export function extractDateFromText(text: string): Date | null {
-  const fullDateRegex =
-    /\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/i;
-  const match = text.match(fullDateRegex);
+export const dateRegexWithPMAM =
+  /\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/i;
+export const dateRegexWithOutPMAM =
+  /\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}/i;
+export function extractDateFromText(
+  text: string,
+  pattern: RegExp
+): Date | null {
+  const match = text.match(pattern);
   const dateValue = match ? match[0].replace("- ", "")! : null;
   return dateValue ? new Date(dateValue) : null;
 }

@@ -1,73 +1,71 @@
 import type { BasePatternExtractor } from "../../extracter/patterns/base-pattern-extractor";
 import {
+  dateRegexWithOutPMAM,
+  extractDateFromText,
   extractDatesFromText,
   findWordUseNextLine,
   parseDateTimeToDateObject,
   parseUsd,
 } from "../../util";
-import type {
-  IInvestmentLog,
-  Investment,
-  InvestmentType,
-  Vat,
-} from "./core";
+import type { IInvestmentLog, Investment, InvestmentType, Vat } from "./core";
 import { getSymbol, getType, sumVat } from "./util";
 
-function getSellShares(words: string[]) {
-  return parseFloat(
-    words[words.findIndex(x => x == 'Shares') - 1]!
-  );
+function getTax(text: string, keyword: string) {
+  try {
+    const tax = getWordAfter(text, keyword, 3);
+    return getFloat(tax.replace(keyword, ""));
+  } catch (ex) {
+    return 0;
+  }
+}
+function getWordAfter(text: string, keyword: string, count: number) {
+  const pattern = `${keyword}` + `\\s+(\\S+)`.repeat(count);
+  const regex = new RegExp(pattern, "i");
+  const match = text.match(regex);
+  if (!match) throw new Error(`not found ${keyword}`);
+  return match[0];
+}
+function getFloat(text: string) {
+  const regex = new RegExp(/-?\d+\.?\d*/g);
+  const match = text.match(regex);
+  if (!match) throw new Error(`not found number`);
+  return parseFloat(match[0]);
 }
 
-function getSellExecutedPrice(words: string[]) {
-  const index = words.findIndex(x => x == 'Executed')
-  if (!index) throw new Error('not found Execute Price')
-  return parseFloat(words[index + 2]!)
+function getBefore(text: string, keyword: string, count: number) {
+  const pattern = `(\\S+)\\s+`.repeat(count) + `${keyword}`;
+  const match = text.match(new RegExp(pattern, "i"));
+  if (!match) throw new Error(`not found ${keyword}`);
+  return match[0];
 }
-
-function getVatSellCommission(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'Commission') + 2]!)
-}
-function getVat7(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'VAT') + 2]!)
-}
-function getVatSEC(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'SEC') + 2]!)
-}
-function getVatTAF(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'TAF') + 2]!)
-}
-function getStockAmount(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'Amount') + 1]!)
-}
-function getPrice(words: string[]) {
-  return parseFloat(words[words.findIndex(x => x == 'Credit') + 1]!)
-}
-
 export class SellInvestmentLog implements IInvestmentLog {
-  constructor(private words: string, private extractor: BasePatternExtractor) { }
+  constructor(private words: string, private extractor: BasePatternExtractor) {}
   toJson(): Investment {
-    const texts = this.extractor.extract(this.words)
-    const [frontText, _completionDate] = extractDatesFromText(texts);
-    const [word, _submissionDate] = frontText?.split('Submission Date')!
-    const submissionDate = parseDateTimeToDateObject(_submissionDate!);
-    const completionDate = parseDateTimeToDateObject(_completionDate?.split('Completion date')[1]!)!;
-    const words = word?.split(' ')!
-    const executedPrice = getSellExecutedPrice(words);
-    const shares = getSellShares(words);
-    const stockAmount = getStockAmount(words);
+    const [orderDetail, dateDetail] = this.words
+      .replace(/[\u0E00-\u0E7F]/g, "")
+      .split(/(?=\Submission Date)/g);
+    if (!orderDetail) throw new Error("no order detail data");
+    if (!dateDetail) throw new Error("no date data");
+    const [submissionDate, completionDate] = this.extractor
+      .extract(dateDetail)
+      .map((x) => extractDateFromText(x, dateRegexWithOutPMAM));
+    if (!submissionDate) throw new Error("no submission date");
+    if (!completionDate) throw new Error("no completion date");
+    const price = getFloat(getWordAfter(orderDetail, "Total Credit", 2));
+    const executedPrice = getFloat(getWordAfter(orderDetail, "Executed", 4));
+    const shares = getFloat(getBefore(orderDetail, "Shares", 1));
+    const stockAmount = getFloat(getBefore(orderDetail, "Amount", 3));
     const vat: Vat = {
-      commissionFee: getVatSellCommission(words),
-      secFee: getVatSEC(words),
-      tafFee: getVatTAF(words),
-      vat7: getVat7(words),
+      commissionFee: getTax(orderDetail, "Commission"),
+      secFee: getTax(orderDetail, "SEC"),
+      tafFee: getTax(orderDetail, "TAF"),
+      vat7: getTax(orderDetail, "VAT 7%"),
     };
-    const price = getPrice(words);
     const allVatPrice = sumVat(vat);
     const diffPrice = stockAmount - price;
     const diffVat = diffPrice - allVatPrice;
     return {
-      kind: 'slip',
+      kind: "slip",
       type: getType(this.words) as InvestmentType,
       symbol: getSymbol(this.words)!,
       stockAmount,
