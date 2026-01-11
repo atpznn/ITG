@@ -1,12 +1,5 @@
 import type { BasePatternExtractor } from "../../extracter/patterns/base-pattern-extractor";
-import {
-  dateRegexWithOutPMAM,
-  extractDateFromText,
-  extractDatesFromText,
-  findWordUseNextLine,
-  parseDateTimeToDateObject,
-  parseUsd,
-} from "../../util";
+import { dateRegexWithOutPMAM, extractDateFromText } from "../../util";
 import type { IInvestmentLog, Investment, InvestmentType, Vat } from "./core";
 import { getSymbol, getType, sumVat } from "./util";
 
