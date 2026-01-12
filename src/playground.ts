@@ -5,6 +5,9 @@ import {
 } from "./services/ocr/index";
 import { createAInvestmentLog } from "./services/dime/stock-slip/core";
 import { CoordinatesOcrStategy } from "./services/ocr/stategies/coordinates-ocr";
+import { BaseOcrStategy } from "./services/ocr/stategies/base-ocr";
+import { dateRegexWithOutPMAM, dateRegexWithPMAM, extractDateFromText } from "./services/util";
+import { DatePatternExtractor } from "./services/extracter/patterns/date-pattern-extractor";
 
 // fs.readdir("./imageTest/dime", async (err, langFolders) => {
 //   for (const langFolder of langFolders) {
@@ -28,17 +31,17 @@ import { CoordinatesOcrStategy } from "./services/ocr/stategies/coordinates-ocr"
 //     }
 //   }
 // });
-const basePath = "./imageTest/dime/en/slips";
-fs.readdir(basePath, async (err, files) => {
-  if (err) return console.log(err);
-  for (const file of files) {
-    const text = await parseImageToText(
-      await readImageBufferFromPath(`${basePath}/${file}`),
-      new CoordinatesOcrStategy()
-    );
-    console.log(createAInvestmentLog(text).toJson());
-  }
-});
+// const basePath = "./imageTest/dime/en/slips";
+// fs.readdir(basePath, async (err, files) => {
+//   if (err) return console.log(err);
+//   for (const file of files) {
+//     const text = await parseImageToText(
+//       await readImageBufferFromPath(`${basePath}/${file}`),
+//       new CoordinatesOcrStategy()
+//     );
+//     console.log(createAInvestmentLog(text).toJson());
+//   }
+// });
 
 // console.log(text)
 // for (const element of [1, 1, 1, 1, 1, 1, 1, 1]) {
@@ -48,10 +51,42 @@ fs.readdir(basePath, async (err, files) => {
 //     ), new CoordinatesOcrStategy()
 //   );
 //   const h = ((await (new TransactionExtractor(new DatePatternExtractor(), text).toJson())))
-//   const k = ((await createAInvestmentLog(await parseImageToText(
-//     await readImageBufferFromPath(
-//       `imageTest/1000000979.jpg`
-//     ), new CoordinatesOcrStategy())).toJson()))
+//   const k = ((await createAInvestmentLog(
+const text = await parseImageToText(
+  await readImageBufferFromPath(
+    `imageTest/1000001062.jpg`
+  ), new CoordinatesOcrStategy()
+)
+console.log(
+  new DatePatternExtractor().extract(text).map(readExchange).filter(x => !!x))
+function readExchange(text: string) {
+  console.log(text)
+  const exchangeDetails = text.match(/-?\d+\.?\d*\s(USD|THB)/g)
+  const numberRegex = /-?(\d+\.?\d*)/g
+  if (exchangeDetails == null) return null
+  const accountDetails = text.match(/-?(Dime! USD|Dime! Save|Dime! FCD)/g)
+  const currentcyRegex = /-?(USD|THB)/g
+  if (accountDetails == null) return null
+  const [fromAccount, toAccount] = accountDetails
+  const [fromCurrency, toCurrency, ...rest] = exchangeDetails
+  const date = extractDateFromText(text, /-?(\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(?:AM|PM))/g)
+  return {
+    from: {
+      account: fromAccount,
+      currentcy: fromCurrency.match(currentcyRegex)![0],
+      value: parseFloat(fromCurrency.match(numberRegex)![0])
+    },
+    to: {
+      account: toAccount,
+      currentcy: toCurrency!.match(currentcyRegex)![0],
+      value: parseFloat(toCurrency!.match(numberRegex)![0])
+    },
+    rate: parseFloat(rest[1]!.match(numberRegex)![0]),
+    remark: rest.join(' => '),
+    date
+  }
+  return [accountDetails, exchangeDetails]
+}
 //   // console.log(h, k)
 // }
 
