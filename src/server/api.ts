@@ -17,11 +17,11 @@ const tasks = new TaskManager(20)
 app.use(profilerIntercepter)
 app.use(requestMiddleWare);
 app.use(errorIntercepter);
-app.use('v1/dime', imageProcessRoute(doOcrImage(dimeManagerParser)))
-app.use('v1/dime/process-text', (req: Request) => (dimeManagerParser(cleanText(req.body.text))))
-app.use('v1/binance-th', imageProcessRoute(doOcrImage(binanceThManagerParser)))
-app.use('v2/binance-th', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), binanceThManagerParser)))
-app.use('v2/dime', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), dimeManagerParser)))
+app.use('/v1/dime', imageProcessRoute(doOcrImage(dimeManagerParser)))
+app.use('/v1/dime/process-text', (req: Request) => (dimeManagerParser(cleanText(req.body.text))))
+app.use('/v1/binance-th', imageProcessRoute(doOcrImage(binanceThManagerParser)))
+app.use('/v2/binance-th', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), binanceThManagerParser)))
+app.use('/v2/dime', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), dimeManagerParser)))
 app.use(express.json());
 
 try {

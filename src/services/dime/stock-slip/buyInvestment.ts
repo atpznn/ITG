@@ -61,7 +61,7 @@ export class BuyInvestmentLog implements IInvestmentLog {
       .map((x) => extractDateFromText(x, dateRegexWithOutPMAM));
     if (!submissionDate) throw new Error("no submission date");
     if (!completionDate) throw new Error("no completion date");
-    const [executedPrice, shares] = getWordAfter(orderDetail, "Shares", 5)
+    const [executedPrice, shares] = getWordAfter(orderDetail, "Shares", 8)
       .split(" ")
       .map(tryGetFloat)
       .filter((x) => x != undefined);

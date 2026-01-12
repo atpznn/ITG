@@ -32,7 +32,7 @@ function getBefore(text: string, keyword: string, count: number) {
   return match[0];
 }
 export class SellInvestmentLog implements IInvestmentLog {
-  constructor(private words: string, private extractor: BasePatternExtractor) {}
+  constructor(private words: string, private extractor: BasePatternExtractor) { }
   toJson(): Investment {
     const [orderDetail, dateDetail] = this.words
       .replace(/[\u0E00-\u0E7F]/g, "")
@@ -45,7 +45,7 @@ export class SellInvestmentLog implements IInvestmentLog {
     if (!submissionDate) throw new Error("no submission date");
     if (!completionDate) throw new Error("no completion date");
     const price = getFloat(getWordAfter(orderDetail, "Total Credit", 2));
-    const executedPrice = getFloat(getWordAfter(orderDetail, "Executed", 4));
+    const executedPrice = getFloat(getWordAfter(orderDetail, "Executed", 7));
     const shares = getFloat(getBefore(orderDetail, "Shares", 1));
     const stockAmount = getFloat(getBefore(orderDetail, "Amount", 3));
     const vat: Vat = {
