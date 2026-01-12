@@ -1,4 +1,4 @@
-import { extractDateFromText } from "../../../util";
+import { dateRegexWithPMAM, extractDateFromText } from "../../../util";
 import type { Dividend } from "../dividend/dividend";
 import type { Parser } from "../parser";
 import type { Fee } from "./fee";
@@ -8,7 +8,7 @@ export class TAFLog implements Parser<Fee> {
   toJson(): Fee {
     const texts = this.text.split(" ");
     const amount = parseFloat(texts[2]!);
-    const date = extractDateFromText(this.text);
+    const date = extractDateFromText(this.text, dateRegexWithPMAM);
     return {
       kind: 'Fee',
       type: 'TAF',

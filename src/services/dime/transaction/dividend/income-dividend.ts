@@ -1,4 +1,4 @@
-import { extractDateFromText } from "../../../util";
+import { dateRegexWithPMAM, extractDateFromText } from "../../../util";
 import type { Parser } from "../parser";
 import type { Dividend } from "./dividend";
 
@@ -12,7 +12,7 @@ export class IncomeDividendLog implements Parser<Dividend> {
       .filter((x) => x != "")!;
     const symbol = s[0]!;
     const value = s[1]!;
-    const date = extractDateFromText(this.words);
+    const date = extractDateFromText(this.words, dateRegexWithPMAM);
     return {
       kind: 'Dividend',
       type: "Income Dividend",

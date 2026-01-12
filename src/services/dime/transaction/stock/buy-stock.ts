@@ -1,4 +1,4 @@
-import { extractDateFromText } from "../../../util";
+import { dateRegexWithOutPMAM, extractDateFromText } from "../../../util";
 import type { Stock } from "./stock";
 import type { Parser } from "../parser";
 export class BuyStockTransaction implements Parser<Stock> {
@@ -9,7 +9,7 @@ export class BuyStockTransaction implements Parser<Stock> {
     const symbol = texts[1]!;
     const price = parseFloat(texts[2]!);
     const executedPriceText = parseFloat(texts[6]!);
-    const date = extractDateFromText(this.text);
+    const date = extractDateFromText(this.text, dateRegexWithOutPMAM);
     const shares = parseFloat(
       texts[texts.findIndex((x) => x == "Shares") + 1]!
     );

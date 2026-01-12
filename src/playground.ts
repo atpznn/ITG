@@ -3,15 +3,8 @@ import {
   parseImageToText,
   readImageBufferFromPath,
 } from "./services/ocr/index";
-import { BinanceThSlip } from "./services/binance-th/slip/slip";
 import { createAInvestmentLog } from "./services/dime/stock-slip/core";
-import { BinanceThTransaction } from "./services/binance-th/transaction/transaction";
-import { BinanceThTransactionPatternExtractor } from "./services/extracter/patterns/binance-th-transaction-pattern-extractor";
-import { BaseOcrStategy } from "./services/ocr/stategies/base-ocr";
 import { CoordinatesOcrStategy } from "./services/ocr/stategies/coordinates-ocr";
-import { TransactionExtractor } from "./services/dime/transaction/transaction-extractor";
-import { DatePatternExtractor } from "./services/extracter/patterns/date-pattern-extractor";
-import { dateRegexWithOutPMAM, extractDateFromText } from "./services/util";
 
 // fs.readdir("./imageTest/dime", async (err, langFolders) => {
 //   for (const langFolder of langFolders) {
