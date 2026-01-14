@@ -2,31 +2,61 @@ package transaction
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
-	"time",
+	"strconv"
 	"strings"
+	"time"
 )
 
 type DimeBuyTransaction struct {
 	Text string
 }
 
-func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog,error) {
+func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
 	pattern := `\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(AM|PM)`
-	texts := strings.Split(b.Text,"\n")
-	symbolAndAmount := strings.Split(strings.TrimSpace(strings.ReplaceAll(texts[0], "Buy", ""))," ")
-	symbol := symbolAndAmount[0]
-	amount := symbolAndAmount[1]
-	re := regexp.MustCompile(pattern)
-	timestamps := re.FindAllString(b.Text,1)
-	layout := "2006-01-02 15:04:05"
-	time,err :=time.Parse(layout,timestamps[0])
-	if (err!=nil){
-		return nil,errors.New("can't parse time")
+	startIndex := strings.Index(b.Text, "Buy")
+	if startIndex == -1 {
+		return nil, errors.New("invalid transaction format: 'Buy' not found")
 	}
-	return &DimeTransactionLog{
-		Type: "Buy",
-		ExecutedDate: time,
+	texts := strings.Split(b.Text[startIndex:], "\n")
+	if len(texts) < 2 {
+		return nil, errors.New("invalid transaction format: insufficient lines")
+	}
+	symbolAndAmount := strings.Fields(strings.TrimSpace(strings.ReplaceAll(texts[0], "Buy", "")))
+	if len(symbolAndAmount) < 2 {
+		return nil, errors.New("invalid symbol or amount format")
+	}
+	symbol := symbolAndAmount[0]
+	amountStr := symbolAndAmount[1]
+	amount, err := strconv.ParseFloat(amountStr, 32)
+	if err != nil {
+		return nil, errors.New("can't parse amout to float")
+	}
+	re := regexp.MustCompile(pattern)
+	dateStr := re.FindString(texts[1])
+	if dateStr == "" {
+		return nil, errors.New("timestamp not found in second line")
+	}
+	layout := "2 Jan 2006 - 03:04:05 PM"
+	time, err := time.Parse(layout, dateStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse time failed: %w", err)
+	}
+	priceStr := strings.Replace(texts[1], dateStr, "", 1)
+	priceStr = strings.Replace(priceStr, "Executed Price", "", 1)
+	priceStr = strings.TrimSpace(priceStr)
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return nil, fmt.Errorf("parse price failed: %w", err)
+	}
 
-	},nil
+	return &DimeTransactionLog{
+		Type:         "Buy",
+		Symbol:       symbol,
+		ExecutedDate: time,
+		Amount:       amount,
+		Shares:       amount / price,
+		Price:        price,
+	}, nil
 }
