@@ -1,4 +1,4 @@
-package transaction_transaction_stock
+package dime_transaction_stock
 
 import (
 	dime_transaction_model "ITG/services/dime/transaction/model"
