@@ -6,7 +6,6 @@ import (
 	dime_transaction_model "ITG/services/dime/transaction/model"
 	dime_transaction_stock "ITG/services/dime/transaction/stock"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -14,7 +13,6 @@ import (
 
 
 func NewDimeTransaction(text string) (dime_transaction_model.DimeTransaction,error) {
-	fmt.Println(text)
 	if strings.Contains(text, "Sell") || strings.Contains(text,"Buy"){
 		return dime_transaction_stock.NewDimeTransactionStock(text),nil
 	}

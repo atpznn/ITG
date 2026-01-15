@@ -3,7 +3,6 @@ package dime_transaction_dividend
 import (
 	dime_transaction_model "ITG/services/dime/transaction/model"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -20,7 +19,6 @@ func (b DimeDividendIncomeTransaction) ToJson() (any, error) {
 	if len(texts) < 2 {
 		return nil, errors.New("invalid transaction format: insufficient lines")
 	}
-	fmt.Print(texts)
 	return &DimeDividendTransaction{
 		DimeTransactionLog: dime_transaction_model.DimeTransactionLog{
 			Type: dime_transaction_model.DimeDividendTransactionType,
