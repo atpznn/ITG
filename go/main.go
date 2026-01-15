@@ -2,14 +2,9 @@ package main
 
 import (
 	"net/http"
-	"sort"
-	"time"
 
 	"ITG/services"
 	dime_transaction "ITG/services/dime/transaction"
-	dime_transaction_dividend "ITG/services/dime/transaction/dividend"
-	dime_transaction_fee "ITG/services/dime/transaction/fee"
-	dime_transaction_stock "ITG/services/dime/transaction/stock"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -39,38 +34,38 @@ func hello(c echo.Context) error {
 
 type Param struct {
 	c            echo.Context
-	transactions []string
-	processing   func(text []string) (*dime_transaction.DimeTransactionLogResponse, error)
+	transactions *dime_transaction.DimeTransactionRequest
+	processing   func(text *dime_transaction.DimeTransactionRequest) (*dime_transaction.DimeTransactionLogResponse, error)
 	sort         bool
 }
 
-func sortResult(result []any) {
-	sort.Slice(result, func(i, j int) bool {
-		getDate := func(item any) time.Time {
-			switch v := item.(type) {
-			case *dime_transaction_dividend.DimeDividendTransaction:
-				return v.ExecutedDate
-			case *dime_transaction_fee.DimeTransactionFee:
-				return v.ExecutedDate
-			case *dime_transaction_stock.DimeTransactionStock:
-				return v.ExecutedDate
-			default:
-				return time.Time{}
-			}
-		}
-		return getDate(result[i]).Before(getDate(result[j]))
-	})
-}
+// func sortResult(result []any) {
+// 	sort.Slice(result, func(i, j int) bool {
+// 		getDate := func(item any) time.Time {
+// 			switch v := item.(type) {
+// 			case *dime_transaction_dividend.DimeDividendTransaction:
+// 				return v.ExecutedDate
+// 			case *dime_transaction_fee.DimeTransactionFee:
+// 				return v.ExecutedDate
+// 			case *dime_transaction_stock.DimeTransactionStock:
+// 				return v.ExecutedDate
+// 			default:
+// 				return time.Time{}
+// 			}
+// 		}
+// 		return getDate(result[i]).Before(getDate(result[j]))
+// 	})
+// }
 
 func singleProcess(param Param) error {
-	results := make([]any, len(param.transactions))
-	result, err := processing(param.transactions)
+	// results := make([]any, len(param.transactions))
+	result, err := param.processing(param.transactions)
 	if err != nil {
 		return param.c.String(http.StatusInternalServerError, err.Error())
 	}
-	if param.sort {
-		sortResult(results)
-	}
+	// if param.sort {
+	// 	sortResult(results)
+	// }
 	return param.c.JSON(http.StatusOK, result)
 }
 
@@ -113,14 +108,18 @@ func multitaskProcess(param Param) error {
 }
 
 func compose(
-	processing func(text []string) (*dime_transaction.DimeTransactionLogResponse, error),
+	processing func(transactions *dime_transaction.DimeTransactionRequest) (*dime_transaction.DimeTransactionLogResponse, error),
 ) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		u := new(DimeBody)
 		if err := c.Bind(u); err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
-		transactions := services.SplitWithDate(u.Text)
+		texts := services.SplitWithDate(u.Text)
+		transactions, err := dime_transaction.ParseTextToTransactionReq(texts)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
 		param := Param{transactions: transactions, processing: processing, c: c, sort: u.Sort}
 		return singleProcess(param)
 		// return req(param)
@@ -133,6 +132,6 @@ func main() {
 	e.Use(middleware.Recover())
 	e.GET("/", hello)
 	e.POST("single/dime/text-process", compose(dime_transaction.NewDimeSingleTransactions))
-	e.POST("multi/dime/text-process", compose(dime_transaction.NewDimeMultipleTransactions))
+	// e.POST("multi/dime/text-process", compose(dime_transaction.NewDimeMultipleTransactions))
 	e.Logger.Fatal(e.Start(":8081"))
 }

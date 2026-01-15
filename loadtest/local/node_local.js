@@ -1,11 +1,10 @@
 import http from "k6/http";
 import { sleep, check } from "k6";
-import { params, payload } from "./const.js";
-export { options } from "/const.js";
-
+import { params, payload } from "../const.js";
+export { options } from "../const.js";
 export default function () {
   const res = http.post(
-    "http://localhost:8081/dime/text-process",
+    "http://localhost:8080/v1/dime/process-text",
     JSON.stringify(payload),
     params
   );

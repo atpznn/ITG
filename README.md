@@ -34,3 +34,6 @@ example
 env CGO_CFLAGS
 if it return -O2 -g it mean not set a path then error when run
 if it return -IC:/msys64/ucrt64/include maybe can work
+
+for load test
+sudo docker compose -f ./docker-compose.test.yml up --build
