@@ -14,16 +14,16 @@ func GetImageBytes(path string) ([]byte, error) {
     defer file.Close()
     return io.ReadAll(file)
 }
-func ParseImagePathToText(path string) string{
+func ParseImagePathToText(path string) (string,error){
 	imgBytes, err := GetImageBytes(path)
 	if err != nil {
-		return err.Error()
+		return "",err
 	}
 	result,error := ParseImageToText(imgBytes)
 	if error != nil {
-		return  error.Error()
+		return  "",error
 	}
-	return result
+	return result,nil
 }
 func ParseImageToText(data []byte) (string,error){
 	client := gosseract.NewClient()

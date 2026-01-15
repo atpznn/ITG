@@ -1,4 +1,4 @@
-package transaction
+package dime_transaction_stock
 
 import (
 	"errors"
@@ -7,14 +7,20 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	dime_transaction_model "ITG/services/dime/transaction/model"
 )
 
 type DimeBuyTransaction struct {
 	Text string
 }
 
-func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
-	pattern := `\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(AM|PM)`
+var (
+	pattern = `\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(AM|PM)`
+	re      = regexp.MustCompile(pattern)
+)
+
+func (b DimeBuyTransaction) ToJson() (*DimeTransactionStock, error) {
 	startIndex := strings.Index(b.Text, "Buy")
 	if startIndex == -1 {
 		return nil, errors.New("invalid transaction format: 'Buy' not found")
@@ -33,7 +39,6 @@ func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
 	if err != nil {
 		return nil, errors.New("can't parse amout to float")
 	}
-	re := regexp.MustCompile(pattern)
 	dateStr := re.FindString(texts[1])
 	if dateStr == "" {
 		return nil, errors.New("timestamp not found in second line")
@@ -51,12 +56,15 @@ func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
 		return nil, fmt.Errorf("parse price failed: %w", err)
 	}
 
-	return &DimeTransactionLog{
-		Type:         "Buy",
-		Symbol:       symbol,
-		ExecutedDate: time,
-		Amount:       amount,
-		Shares:       amount / price,
-		Price:        price,
+	return &DimeTransactionStock{
+		BaseDimeTransactionLog: dime_transaction_model.BaseDimeTransactionLog{
+			Type:         dime_transaction_model.DimeBuyTransactionType,
+			Symbol:       symbol,
+			Kind:         dime_transaction_model.DimeTransactionExpense,
+			ExecutedDate: time,
+			Amount:       amount,
+		},
+		Shares: amount / price,
+		Price:  price,
 	}, nil
 }
