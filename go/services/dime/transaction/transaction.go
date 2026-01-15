@@ -1,37 +1,28 @@
-package transaction
+package dime_transaction
 
 import (
+	dime_transaction_dividend "ITG/services/dime/transaction/dividend"
+	dime_transaction_fee "ITG/services/dime/transaction/fee"
+	dime_transaction_model "ITG/services/dime/transaction/model"
+	dime_transaction_stock "ITG/services/dime/transaction/stock"
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 )
 
-type DimeTransaction interface {
-	ToJson() (*DimeTransactionLog, error)
-}
-type DimeTransactionLog struct {
-	Type         string
-	Symbol       string
-	Amount       float64
-	ExecutedDate time.Time
-	Shares       float64
-	Price        float64
-}
 
-func NewDimeTransaction(text string) (DimeTransaction, error) {
+
+
+func NewDimeTransaction(text string) (dime_transaction_model.DimeTransaction,error) {
 	fmt.Println(text)
-	if strings.Contains(text, "Sell") {
-		return DimeSellTransaction{Text: text}, nil
-	}
-	if strings.Contains(text, "Buy") {
-		return DimeBuyTransaction{Text: text}, nil
+	if strings.Contains(text, "Sell") || strings.Contains(text,"Buy"){
+		return dime_transaction_stock.NewDimeTransactionStock(text),nil
 	}
 	if strings.Contains(text, "TAF") {
-		return DimeTafTransaction{Text: text}, nil
+		return dime_transaction_fee.NewDimeTransactionFee(text),nil
 	}
 	if strings.Contains(text, "Dividend") {
-		return DimeDividendTransaction{Text: text}, nil
+		return dime_transaction_dividend.NewDimeTransactionDividend(text),nil
 	}
-	return nil, errors.New("Not Found Transaction Type")
+	return nil,errors.New("Not Found Transaction Type")
 }

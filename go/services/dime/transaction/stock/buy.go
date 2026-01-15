@@ -1,6 +1,7 @@
-package transaction
+package transaction_transaction_stock
 
 import (
+	dime_transaction_model "ITG/services/dime/transaction/model"
 	"errors"
 	"fmt"
 	"regexp"
@@ -8,13 +9,11 @@ import (
 	"strings"
 	"time"
 )
-
 type DimeBuyTransaction struct {
 	Text string
 }
-
-func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
-	pattern := `\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(AM|PM)`
+var pattern = `\d{1,2}\s[A-Z][a-z]{2}\s\d{4}\s-\s\d{2}:\d{2}:\d{2}\s(AM|PM)`
+func (b DimeBuyTransaction) ToJson() (any, error) {
 	startIndex := strings.Index(b.Text, "Buy")
 	if startIndex == -1 {
 		return nil, errors.New("invalid transaction format: 'Buy' not found")
@@ -51,11 +50,14 @@ func (b DimeBuyTransaction) ToJson() (*DimeTransactionLog, error) {
 		return nil, fmt.Errorf("parse price failed: %w", err)
 	}
 
-	return &DimeTransactionLog{
-		Type:         "Buy",
+	return &DimeTransactionStock{
+		DimeTransactionLog: dime_transaction_model.DimeTransactionLog{
+		Type:         dime_transaction_model.DimeBuyTransactionType,
 		Symbol:       symbol,
+		Kind: dime_transaction_model.DimeTransactionExpense,
 		ExecutedDate: time,
 		Amount:       amount,
+		},
 		Shares:       amount / price,
 		Price:        price,
 	}, nil
