@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"runtime"
 	"sort"
@@ -81,7 +80,6 @@ func singleProcess(param Param) error {
 
 func multitaskProcess(param Param) error {
 	numWorkers := runtime.NumCPU()
-	fmt.Println(fmt.Sprintf("cpu %d cores", numWorkers))
 	g, ctx := errgroup.WithContext(param.c.Request().Context())
 	resultChan := make(chan any, numWorkers)
 	for _, transaction := range param.transactions {
