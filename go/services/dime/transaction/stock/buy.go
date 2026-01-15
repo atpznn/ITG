@@ -20,7 +20,7 @@ var (
 	re      = regexp.MustCompile(pattern)
 )
 
-func (b DimeBuyTransaction) ToJson() (any, error) {
+func (b DimeBuyTransaction) ToJson() (*DimeTransactionStock, error) {
 	startIndex := strings.Index(b.Text, "Buy")
 	if startIndex == -1 {
 		return nil, errors.New("invalid transaction format: 'Buy' not found")
@@ -57,7 +57,7 @@ func (b DimeBuyTransaction) ToJson() (any, error) {
 	}
 
 	return &DimeTransactionStock{
-		DimeTransactionLog: dime_transaction_model.DimeTransactionLog{
+		BaseDimeTransactionLog: dime_transaction_model.BaseDimeTransactionLog{
 			Type:         dime_transaction_model.DimeBuyTransactionType,
 			Symbol:       symbol,
 			Kind:         dime_transaction_model.DimeTransactionExpense,

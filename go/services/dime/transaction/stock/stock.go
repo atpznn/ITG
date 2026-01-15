@@ -1,18 +1,22 @@
 package dime_transaction_stock
 
 import (
-	dime_transaction_model "ITG/services/dime/transaction/model"
 	"strings"
+
+	dime_transaction_model "ITG/services/dime/transaction/model"
 )
 
-
 type DimeTransactionStock struct {
-	dime_transaction_model.DimeTransactionLog
-	Shares       float64
-	Price        float64
+	dime_transaction_model.BaseDimeTransactionLog
+	Shares float64
+	Price  float64
 }
-func NewDimeTransactionStock(text string) dime_transaction_model.DimeTransaction {
-	if strings.Contains(text,"Buy"){
+type DimeStockTransaction interface {
+	ToJson() (*DimeTransactionStock, error)
+}
+
+func NewDimeTransactionStock(text string) DimeStockTransaction {
+	if strings.Contains(text, "Buy") {
 		return DimeBuyTransaction{Text: text}
 	}
 	return DimeSellTransaction{Text: text}

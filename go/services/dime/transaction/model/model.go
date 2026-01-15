@@ -1,22 +1,23 @@
 package dime_transaction_model
 
-import "time"
+import (
+	"time"
+)
 
-type DimeTransaction interface {
-	ToJson() (any, error)
-}
-type DimeTransactionLog struct {
+type BaseDimeTransactionLog struct {
 	Type         DimeTransactionType
 	Symbol       string
 	Amount       float64
 	ExecutedDate time.Time
-	Kind 		 DimeTransactionKine
+	Kind         DimeTransactionKine
 }
 type DimeTransactionKine string
+
 const (
-	DimeTransactionExpense    DimeTransactionKine = "expense"
-	DimeTransactionIncome    DimeTransactionKine = "income"
+	DimeTransactionExpense DimeTransactionKine = "expense"
+	DimeTransactionIncome  DimeTransactionKine = "income"
 )
+
 type DimeTransactionType string
 
 const (

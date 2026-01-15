@@ -5,9 +5,12 @@ import (
 )
 
 type DimeTransactionFee struct {
-	dime_transaction_model.DimeTransactionLog
+	dime_transaction_model.BaseDimeTransactionLog
+}
+type DimeFeeTransaction interface {
+	ToJson() (*DimeTransactionFee, error)
 }
 
-func NewDimeTransactionFee(text string) dime_transaction_model.DimeTransaction{
+func NewDimeTransactionFee(text string) DimeFeeTransaction {
 	return DimeTafTransaction{Text: text}
 }

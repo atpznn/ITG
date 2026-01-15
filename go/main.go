@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"runtime"
 	"sort"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/sync/errgroup"
 )
 
 type DimeBody struct {
@@ -22,16 +20,17 @@ type DimeBody struct {
 	Sort bool   `json:"sort"`
 }
 
-func processing(text string) (any, error) {
-	parser, err := dime_transaction.NewDimeTransaction(text)
-	if err != nil {
-		return nil, err
-	}
-	result, err := parser.ToJson()
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+func processing(texts []string) (any, error) {
+	// parser, err := dime_transaction.NewDimeTransaction(text)
+	// if err != nil {
+	// return nil, err
+	// }
+	// result, err := parser.ToJson()
+	// if err != nil {
+	// return nil, err
+	// }
+	// return result, nil
+	return nil, nil
 }
 
 func hello(c echo.Context) error {
@@ -41,7 +40,7 @@ func hello(c echo.Context) error {
 type Param struct {
 	c            echo.Context
 	transactions []string
-	processing   func(text string) (any, error)
+	processing   func(text []string) (*dime_transaction.DimeTransactionLogResponse, error)
 	sort         bool
 }
 
@@ -65,60 +64,56 @@ func sortResult(result []any) {
 
 func singleProcess(param Param) error {
 	results := make([]any, len(param.transactions))
-	for index, transaction := range param.transactions {
-		result, err := processing(transaction)
-		if err != nil {
-			return param.c.String(http.StatusInternalServerError, err.Error())
-		}
-		results[index] = result
+	result, err := processing(param.transactions)
+	if err != nil {
+		return param.c.String(http.StatusInternalServerError, err.Error())
 	}
 	if param.sort {
 		sortResult(results)
 	}
-	return param.c.JSON(http.StatusOK, results)
+	return param.c.JSON(http.StatusOK, result)
 }
 
 func multitaskProcess(param Param) error {
-	numWorkers := runtime.NumCPU()
-	g, ctx := errgroup.WithContext(param.c.Request().Context())
-	resultChan := make(chan any, numWorkers)
-	for _, transaction := range param.transactions {
-		g.Go(func() error {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-			result, err := processing(transaction)
-			if err != nil {
-				return err
-			}
-			resultChan <- result
-			return nil
-		})
-	}
-	go func() {
-		g.Wait()
-		close(resultChan)
-	}()
+	// numWorkers := runtime.NumCPU()
+	// g, ctx := errgroup.WithContext(param.c.Request().Context())
+	// resultChan := make(chan any, numWorkers)
+	// for _, transaction := range param.transactions {
+	// 	g.Go(func() error {
+	// 		select {
+	// 		case <-ctx.Done():
+	// 			return ctx.Err()
+	// 		default:
+	// 		}
+	// 		result, err := processing(transaction)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		resultChan <- result
+	// 		return nil
+	// 	})
+	// }
+	// go func() {
+	// 	g.Wait()
+	// 	close(resultChan)
+	// }()
 
-	results := []any{}
-	for r := range resultChan {
-		results = append(results, r)
-	}
+	// results := []any{}
+	// for r := range resultChan {
+	// 	results = append(results, r)
+	// }
 
-	if err := g.Wait(); err != nil {
-		return param.c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-	}
-	if param.sort {
-		sortResult(results)
-	}
-	return param.c.JSON(http.StatusOK, results)
+	// if err := g.Wait(); err != nil {
+	// 	return param.c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	// }
+	// if param.sort {
+	// 	sortResult(results)
+	// }
+	return param.c.JSON(http.StatusOK, 1)
 }
 
 func compose(
-	req func(param Param) error,
-	processing func(text string) (any, error),
+	processing func(text []string) (*dime_transaction.DimeTransactionLogResponse, error),
 ) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		u := new(DimeBody)
@@ -127,7 +122,8 @@ func compose(
 		}
 		transactions := services.SplitWithDate(u.Text)
 		param := Param{transactions: transactions, processing: processing, c: c, sort: u.Sort}
-		return req(param)
+		return singleProcess(param)
+		// return req(param)
 	}
 }
 
@@ -136,7 +132,7 @@ func main() {
 	// e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.GET("/", hello)
-	e.POST("single/dime/text-process", compose(singleProcess, processing))
-	e.POST("multi/dime/text-process", compose(multitaskProcess, processing))
+	e.POST("single/dime/text-process", compose(dime_transaction.NewDimeSingleTransactions))
+	e.POST("multi/dime/text-process", compose(dime_transaction.NewDimeMultipleTransactions))
 	e.Logger.Fatal(e.Start(":8081"))
 }

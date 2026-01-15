@@ -1,14 +1,21 @@
 package dime_transaction_dividend
 
 import (
-	dime_transaction_model "ITG/services/dime/transaction/model"
 	"strings"
+
+	dime_transaction_model "ITG/services/dime/transaction/model"
 )
-type DimeDividendTransaction struct {
-	dime_transaction_model.DimeTransactionLog
+
+type DimeDividendTransaction interface {
+	ToJson() (*DimeTransactionDividend, error)
 }
-func NewDimeTransactionDividend(text string) dime_transaction_model.DimeTransaction{
-	if strings.Contains(text,"Dividend Withholding Tax") {
+
+type DimeTransactionDividend struct {
+	dime_transaction_model.BaseDimeTransactionLog
+}
+
+func NewDimeTransactionDividend(text string) DimeDividendTransaction {
+	if strings.Contains(text, "Dividend Withholding Tax") {
 		return DimeDividendTaxTransaction{Text: text}
 	}
 	return DimeDividendIncomeTransaction{
