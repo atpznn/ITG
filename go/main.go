@@ -323,7 +323,11 @@ func main() {
 		ocrClient.SetLanguage("eng")
 	}()
 	e := echo.New()
-	// e.Use(middleware.Logger())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete, http.MethodOptions},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 	e.Use(middleware.Recover())
 	e.GET("/", hello)
 	e.POST("single/dime/text-process", compose(dime_transaction.NewDimeSingleTransactions))
