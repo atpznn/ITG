@@ -11,8 +11,12 @@ RUN apk add --no-cache \
     tesseract-ocr-data-eng \
     tesseract-ocr-data-tha
 
-RUN wget https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata -O /usr/share/tesseract-ocr/5/tessdata/eng.traineddata && \
-    wget https://github.com/tesseract-ocr/tessdata_fast/raw/main/tha.traineddata -O /usr/share/tesseract-ocr/5/tessdata/tha.traineddata
+RUN mkdir -p /usr/share/tessdata
+
+RUN wget https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata -O /usr/share/tessdata/eng.traineddata && \
+    wget https://github.com/tesseract-ocr/tessdata_fast/raw/main/tha.traineddata -O /usr/share/tessdata/tha.traineddata
+
+ENV TESSDATA_PREFIX=/usr/share/tessdata/
     
 ENV OMP_THREAD_LIMIT=1
 
