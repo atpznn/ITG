@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+ENV OMP_THREAD_LIMIT=1
 WORKDIR /root/
 
 COPY --from=builder /app/main .

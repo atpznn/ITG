@@ -25,6 +25,7 @@ app.use('/v2/binance-th', (req: Request) => imageProcessRoute(doTask(tasks, req.
 app.use('/v2/dime', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), dimeManagerParser)))
 app.use(taskRoute(tasks))
 app.use(express.json());
+app.use(imageProcessRoute(doOcrImage(text => text)))
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

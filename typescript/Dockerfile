@@ -11,9 +11,10 @@ RUN apk add --no-cache \
     tesseract-ocr-data-eng \
     tesseract-ocr-data-tha
 
+ENV OMP_THREAD_LIMIT=1
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .
-
 
 EXPOSE 8080
 CMD ["npm", "start"]
