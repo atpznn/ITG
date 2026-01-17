@@ -5,9 +5,10 @@ export abstract class OcrStategy {
 }
 export class BaseOcrStategy implements OcrStategy {
     private config: tesseract.Config = {
-        lang: "eng+tha",
-        oem: 1,
-        psm: 6,
+        // lang: "eng+tha",
+        lang: "eng",
+        // oem: 1,
+        // psm: 6,
 
         // "textord_heavy_nr": "0",
         // "textord_min_linesize": '1.0',

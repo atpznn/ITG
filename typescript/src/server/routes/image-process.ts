@@ -6,6 +6,7 @@ import express, {
 import { parseImageToText } from "../../services/ocr";
 import { CoordinatesOcrStategy } from "../../services/ocr/stategies/coordinates-ocr";
 import type { TaskManager } from "../../services/task/task";
+import { BaseOcrStategy } from "../../services/ocr/stategies/base-ocr";
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 }).array("images", 5);
@@ -17,8 +18,6 @@ function imageHandler(doThing: (f: Express.Multer.File[]) => Promise<unknown>) {
       if (err) return res.status(500).send("An unknown error occurred during upload.");
       const files = (req as any).files as Express.Multer.File[]
       if (!files || files.length === 0) return res.status(400).send("No files were uploaded.");
-
-      console.log('found image file :', files.length)
       const result = await doThing(files)
       res.json(result)
     })
@@ -33,7 +32,7 @@ export function doOcrImage(doAfterOcr: (text: string) => unknown) {
   return async function (files: Express.Multer.File[]) {
     const results = []
     for (const file of files) {
-      const text = await parseImageToText(file.buffer, new CoordinatesOcrStategy())
+      const text = await parseImageToText(file.buffer, new BaseOcrStategy())
       results.push(doAfterOcr(text))
     }
     return results

@@ -14,17 +14,18 @@ const port: number = 8080;
 app.use(cors());
 app.use(express.json());
 app.get("/", (req: Request, res: Response) => res.send("Hello, Express with TypeScript!"));
-const tasks = new TaskManager(20)
-app.use(profilerIntercepter)
-app.use(requestMiddleWare);
-app.use(errorIntercepter);
-app.use('/v1/dime', imageProcessRoute(doOcrImage(dimeManagerParser)))
-app.use('/v1/dime/process-text', (req: Request, res: Response) => res.status(200).json((dimeManagerParser(cleanText(req.body.text)))))
-app.use('/v1/binance-th', imageProcessRoute(doOcrImage(binanceThManagerParser)))
-app.use('/v2/binance-th', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), binanceThManagerParser)))
-app.use('/v2/dime', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), dimeManagerParser)))
-app.use(taskRoute(tasks))
+// const tasks = new TaskManager(20)
+// app.use(profilerIntercepter)
+// app.use(requestMiddleWare);
+// app.use(errorIntercepter);
+// app.use('/v1/dime', imageProcessRoute(doOcrImage(dimeManagerParser)))
+// app.use('/v1/dime/process-text', (req: Request, res: Response) => res.status(200).json((dimeManagerParser(cleanText(req.body.text)))))
+// app.use('/v1/binance-th', imageProcessRoute(doOcrImage(binanceThManagerParser)))
+// app.use('/v2/binance-th', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), binanceThManagerParser)))
+// app.use('/v2/dime', (req: Request) => imageProcessRoute(doTask(tasks, req.baseUrl.replace('/', ''), dimeManagerParser)))
+// app.use(taskRoute(tasks))
 app.use(express.json());
+app.use(imageProcessRoute(doOcrImage(text => text)))
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
