@@ -3,15 +3,19 @@ import { FormData } from "https://jslib.k6.io/formdata/0.0.2/index.js";
 const options = {
   stages: [
     { duration: "30s", target: 5 },
-    { duration: "10s", target: 10 },
-    { duration: "1m", target: 25 },
-    { duration: "30s", target: 10 },
+    { duration: "30s", target: 15 },
+    { duration: "5m", target: 60 },
+    { duration: "10m", target: 40 },
+    { duration: "10m", target: 80 },
+    { duration: "20m", target: 150 },
+    { duration: "20m", target: 60 },
+    { duration: "30s", target: 100 },
     { duration: "30s", target: 0 },
   ],
 };
 const img = open(
-  "C:/Users/aston/Desktop/workshop/ITG/imageTest/dime/en/transactions/1.jpg",
-  "b"
+  "/home/atippa/Documents/ITG/imageTest/dime/en/transactions/1.jpg",
+  "b",
 );
 
 const payloadFiles = new FormData();

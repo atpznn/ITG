@@ -1,7 +1,7 @@
 import tesseract from "node-tesseract-ocr";
 import fs from "fs";
-import path from 'path'
-import sharp, { type Sharp } from 'sharp';
+import path from "path";
+import sharp, { type Sharp } from "sharp";
 import type { OcrStategy } from "./stategies/base-ocr";
 export async function readImageBufferFromPath(path: string) {
   const image = await fs.readFileSync(path);
@@ -13,36 +13,40 @@ function sanitize(text: string): string {
 }
 async function saveImage(inputBuffer: Buffer, outputFileName: string) {
   try {
-    const debugDir = './imageTest/debugImages';
+    const debugDir = "./imageTest/debugImages";
     if (!fs.existsSync(debugDir)) {
       fs.mkdirSync(debugDir, { recursive: true });
     }
     const outputPath = path.join(debugDir, outputFileName);
     await fs.promises.writeFile(outputPath, inputBuffer);
-    console.log(`Successfully saved: ${outputPath}`);
-
+    // console.log(`Successfully saved: ${outputPath}`);
   } catch (error) {
-    console.error('Error processing image:', error);
+    console.error("Error processing image:", error);
     throw error;
   }
 }
 async function getIsDark(buffer: Buffer) {
   const tinyStats = await sharp(buffer).resize(10, 10).stats();
-  const mean = tinyStats.channels.reduce((acc, c) => acc + c.mean, 0) / tinyStats.channels.length;
+  const mean =
+    tinyStats.channels.reduce((acc, c) => acc + c.mean, 0) /
+    tinyStats.channels.length;
   return mean < 128;
 }
 async function normalizeWithTheme(sharpImage: sharp.Sharp) {
   const stats = await sharpImage.stats();
-  const isDark = stats.channels.reduce((acc, c) => acc + c.mean, 0) / stats.channels.length < 128;
-  const threshold = isDark ? 120 : 200
-  if (isDark) return { image: sharpImage.modulate({ brightness: 1.8 }), threshold }
+  const isDark =
+    stats.channels.reduce((acc, c) => acc + c.mean, 0) / stats.channels.length <
+    128;
+  const threshold = isDark ? 120 : 200;
+  if (isDark)
+    return { image: sharpImage.modulate({ brightness: 1.8 }), threshold };
   return {
     image: sharpImage.modulate({
       brightness: 0.3,
-      saturation: 0
-    }), threshold
-  }
-
+      saturation: 0,
+    }),
+    threshold,
+  };
 }
 async function fastResize(buffer: Buffer, percent: number = 50) {
   const image = sharp(buffer);
@@ -51,20 +55,17 @@ async function fastResize(buffer: Buffer, percent: number = 50) {
   if (meta.width && meta.height) {
     const newWidth = Math.round(meta.width * (percent / 100));
 
-    return await image
-      .resize(newWidth)
-      .grayscale()
-      .toBuffer();
+    return await image.resize(newWidth).grayscale().toBuffer();
   }
 
   return buffer;
 }
 function convertBackToWrite(image: Sharp, isDark: boolean) {
-  if (isDark) return image.negate({ alpha: false })
-  return image
+  if (isDark) return image.negate({ alpha: false });
+  return image;
 }
 async function greyScale(buffer: Buffer) {
-  sharp.concurrency(1)
+  sharp.concurrency(1);
   sharp.cache(false);
   // const sharpImage = sharp(buffer);
   const isDark = await getIsDark(buffer);
@@ -75,19 +76,21 @@ async function greyScale(buffer: Buffer) {
   // .withMetadata({ density: 300 })
   // .ensureAlpha()
   // )
-  return convertBackToWrite(
-    await sharp(await fastResize(buffer, 60))
-    // .ensureAlpha()
-    // .modulate({ brightness: isDark ? 2 : 0.4 })
-    , isDark
-  )
-    // .greyscale()
-    // .threshold(threshold)
-    // .png({
-    //   quality: 100,
-    //   compressionLevel: 9 // บีบอัดขนาดไฟล์ให้เล็กที่สุด (ประหยัด RAM ตอนส่งให้ OCR)
-    // })
-    .toBuffer();
+  return (
+    convertBackToWrite(
+      await sharp(await fastResize(buffer, 60)),
+      // .ensureAlpha()
+      // .modulate({ brightness: isDark ? 2 : 0.4 })
+      isDark,
+    )
+      // .greyscale()
+      // .threshold(threshold)
+      // .png({
+      //   quality: 100,
+      //   compressionLevel: 9 // บีบอัดขนาดไฟล์ให้เล็กที่สุด (ประหยัด RAM ตอนส่งให้ OCR)
+      // })
+      .toBuffer()
+  );
 }
 export function cleanText(text: string) {
   return sanitize(text)
@@ -104,9 +107,9 @@ export async function parseImageToText(image: Buffer, ocrStategy: OcrStategy) {
   // console.time("OCR-Task only");
   // await tesseract.recognize(image, ocrStategy.getConfig())
   // console.timeEnd("OCR-Task only");
-  console.time("OCR-Task with preprocess");
-  const tsvData = await tesseract.recognize(image, ocrStategy.getConfig())
-  console.timeEnd("OCR-Task with preprocess");
-  const text = ocrStategy.mutation(tsvData)
-  return cleanText(text)
+  // console.time("OCR-Task with preprocess");
+  const tsvData = await tesseract.recognize(image, ocrStategy.getConfig());
+  // console.timeEnd("OCR-Task with preprocess");
+  const text = ocrStategy.mutation(tsvData);
+  return cleanText(text);
 }

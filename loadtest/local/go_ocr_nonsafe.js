@@ -1,15 +1,10 @@
 import { check } from "k6";
 import http from "k6/http";
-import { paramsFile, payloadFiles } from "../const.js";
+import { pl } from "../const.js";
 import { sleep } from "k6";
 export { options } from "../const.js";
 export default function () {
-  console.log(payloadFiles);
-  const res = http.post(
-    "https://itg-go.zeabur.app/ocr-single-safe",
-    payloadFiles.body(),
-    paramsFile
-  );
+  const res = http.post("http://localhost:8082/ocr-single", pl);
 
   const isOk = check(res, {
     "status is 200": (r) => r.status === 200,
@@ -23,7 +18,7 @@ export default function () {
       const body = res.json();
       check(res, {
         "has results": (r) => body.results && body.results.length > 0,
-        "valid content": (r) => body.results[0].length > 10,
+        "valid content": (r) => body.results[0].includes("SGOV 1.72 USD"),
       });
     } catch (e) {
       console.log("Failed to parse JSON. Raw body: " + res.body);

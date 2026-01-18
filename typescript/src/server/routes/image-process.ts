@@ -1,8 +1,5 @@
 import multer from "multer";
-import express, {
-  type Request,
-  type Response,
-} from "express";
+import express, { type Request, type Response } from "express";
 import { parseImageToText } from "../../services/ocr";
 import { CoordinatesOcrStategy } from "../../services/ocr/stategies/coordinates-ocr";
 import type { TaskManager } from "../../services/task/task";
@@ -14,40 +11,52 @@ const upload = multer({
 function imageHandler(doThing: (f: Express.Multer.File[]) => Promise<unknown>) {
   return function (req: Request, res: Response) {
     return upload(req, res, async (err) => {
-      if (err instanceof multer.MulterError) return res.status(400).send(`Multer Error: ${err.message}`);
-      if (err) return res.status(500).send("An unknown error occurred during upload.");
-      const files = (req as any).files as Express.Multer.File[]
-      if (!files || files.length === 0) return res.status(400).send("No files were uploaded.");
-      const result = await doThing(files)
-      res.json(result)
-    })
-  }
+      if (err instanceof multer.MulterError)
+        return res.status(400).send(`Multer Error: ${err.message}`);
+      if (err)
+        return res.status(500).send("An unknown error occurred during upload.");
+      const files = (req as any).files as Express.Multer.File[];
+      if (!files || files.length === 0)
+        return res.status(400).send("No files were uploaded.");
+      const results = await doThing(files);
+      res.json({ results });
+    });
+  };
 }
-export default function imageProcessRoute(doThing: (f: Express.Multer.File[]) => Promise<unknown>) {
+export default function imageProcessRoute(
+  doThing: (f: Express.Multer.File[]) => Promise<unknown>,
+) {
   const app = express();
-  app.post('/image-process', imageHandler(doThing));
-  return app
+  app.post("/image-process", imageHandler(doThing));
+  return app;
 }
 export function doOcrImage(doAfterOcr: (text: string) => unknown) {
   return async function (files: Express.Multer.File[]) {
-    const results = []
+    const results = [];
     for (const file of files) {
-      const text = await parseImageToText(file.buffer, new BaseOcrStategy())
-      results.push(doAfterOcr(text))
+      const text = await parseImageToText(file.buffer, new BaseOcrStategy());
+      results.push(doAfterOcr(text));
     }
-    return results
-  }
+    return results;
+  };
 }
-export function doTask(taskManager: TaskManager, taskName: string, doAfterOcr: (text: string) => unknown) {
+export function doTask(
+  taskManager: TaskManager,
+  taskName: string,
+  doAfterOcr: (text: string) => unknown,
+) {
   return async function (files: Express.Multer.File[]) {
-    const todos: (() => Promise<unknown>)[] = []
+    const todos: (() => Promise<unknown>)[] = [];
     for (const file of files) {
       todos.push(async () => {
-        const text = await parseImageToText(file.buffer, new CoordinatesOcrStategy())
-        return doAfterOcr(text)
-      })
+        const text = await parseImageToText(
+          file.buffer,
+          new CoordinatesOcrStategy(),
+        );
+        return doAfterOcr(text);
+      });
     }
-    const taskId = taskManager.spawnNewTask(taskName, todos)
-    return taskId
-  }
+    const taskId = taskManager.spawnNewTask(taskName, todos);
+    return taskId;
+  };
 }

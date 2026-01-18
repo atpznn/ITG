@@ -4,7 +4,7 @@ import { pl } from "../const.js";
 import { sleep } from "k6";
 export { options } from "../const.js";
 export default function () {
-  const res = http.post("http://localhost:8080/image-process", pl);
+  const res = http.post("http://localhost:8081/ocr-single-safe", pl);
 
   const isOk = check(res, {
     "status is 200": (r) => r.status === 200,
@@ -12,7 +12,7 @@ export default function () {
       r.headers["Content-Type"] &&
       r.headers["Content-Type"].includes("application/json"),
   });
-  console.log(res.body);
+
   if (isOk) {
     try {
       const body = res.json();

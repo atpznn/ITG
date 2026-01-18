@@ -1,7 +1,7 @@
 import http from "k6/http";
 import { sleep, check } from "k6";
 import { params, paramsFile, payload, payloadFiles, pl } from "./const.js";
-export { options } from "/const.js";
+export { options } from "./const.js";
 export default function () {
   const res = http.post("https://itg-go.onrender.com/ocr-single-safe", pl);
   const isOk = check(res, {

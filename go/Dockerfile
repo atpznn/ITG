@@ -28,8 +28,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 ENV OMP_THREAD_LIMIT=1
-
-RUN mkdir -p /usr/local/share/tessdata
+ENV MALLOC_TRIM_THRESHOLD_=131072
+RUN mkdir -p /usr/local/share/tessdataฆ
 
 COPY --from=builder /app/my_tessdata/*.traineddata /usr/local/share/tessdata/
 
