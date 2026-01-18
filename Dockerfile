@@ -18,7 +18,7 @@ RUN wget https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux go build -o main .
+RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/api/main.go
 
 FROM debian:bookworm-slim
 

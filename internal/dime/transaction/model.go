@@ -1,4 +1,4 @@
-package dime_transaction_model
+package dimets
 
 import (
 	"time"

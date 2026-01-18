@@ -1,19 +1,7 @@
 services:
-  typescript-api:
-    build:
-      context: ./typescript
-      dockerfile: Dockerfile
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 512M
-    ports:
-      - "8080:8080"
-
   go-api1:
     build:
-      context: ./go
+      context: .
       dockerfile: Dockerfile
     deploy:
       resources:
@@ -25,7 +13,7 @@ services:
 
   go-api2:
     build:
-      context: ./go
+      context: .
       dockerfile: Dockerfile
     deploy:
       resources:

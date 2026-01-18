@@ -6,6 +6,8 @@ package main
 import "C"
 
 import (
+	dimets "ITG/internal/dime/transaction"
+	"ITG/internal/ocr"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +18,7 @@ import (
 	"github.com/labstack/echo-contrib/pprof"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/otiai10/gosseract"
+	"github.com/otiai10/gosseract/v2"
 )
 
 type DimeBody struct {
@@ -123,11 +125,14 @@ func ocrHandler(c echo.Context) error {
 		"results": results,
 	})
 }
+
 func main() {
 	func() {
 		ocrClient = gosseract.NewClient()
 		ocrClient.SetLanguage("eng")
 	}()
+	ocrService := ocr.NewOCRService(6)
+	ocrHandler := ocr.NewOCRHandler(ocrService)
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -136,8 +141,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 	e.GET("/", hello)
-	e.POST("ocr-single-safe", ocrHandlerSafe)
-	e.POST("ocr-single", ocrHandler)
+	e.POST("ocr-single", ocrHandler.HandleUpload(dimets.ReadToJson))
 	pprof.Register(e)
 	e.Logger.Fatal(e.Start(":8081"))
 }

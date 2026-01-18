@@ -1,11 +1,7 @@
-package dime_transaction_fee
-
-import (
-	dime_transaction_model "ITG/services/dime/transaction/model"
-)
+package dimets
 
 type DimeTransactionFee struct {
-	dime_transaction_model.BaseDimeTransactionLog
+	BaseDimeTransactionLog
 }
 type DimeFeeTransaction interface {
 	ToJson() (*DimeTransactionFee, error)

@@ -1,9 +1,7 @@
-package dime_transaction_dividend
+package dimets
 
 import (
 	"strings"
-
-	dime_transaction_model "ITG/services/dime/transaction/model"
 )
 
 type DimeDividendTransaction interface {
@@ -11,7 +9,7 @@ type DimeDividendTransaction interface {
 }
 
 type DimeTransactionDividend struct {
-	dime_transaction_model.BaseDimeTransactionLog
+	BaseDimeTransactionLog
 }
 
 func NewDimeTransactionDividend(text string) DimeDividendTransaction {

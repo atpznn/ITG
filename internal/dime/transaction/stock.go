@@ -1,13 +1,11 @@
-package dime_transaction_stock
+package dimets
 
 import (
 	"strings"
-
-	dime_transaction_model "ITG/services/dime/transaction/model"
 )
 
 type DimeTransactionStock struct {
-	dime_transaction_model.BaseDimeTransactionLog
+	BaseDimeTransactionLog
 	Shares float64
 	Price  float64
 }
