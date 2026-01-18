@@ -2,7 +2,9 @@ package dimets
 
 import (
 	"regexp"
+	"slices"
 	"strings"
+	"time"
 )
 
 type DimeTransactionLogResponse struct {
@@ -38,6 +40,24 @@ func splitWithDate(text string) []string {
 	return transactions
 }
 
+type DimeTransaction interface {
+	GetExecutedDate() time.Time
+}
+
+type LogT interface {
+	DimeTransaction
+	DimeTransactionFee | DimeTransactionDividend | DimeTransactionStock
+}
+
+func (f DimeTransactionFee) GetExecutedDate() time.Time      { return f.ExecutedDate }
+func (d DimeTransactionDividend) GetExecutedDate() time.Time { return d.ExecutedDate }
+func (s DimeTransactionStock) GetExecutedDate() time.Time    { return s.ExecutedDate }
+
+func sortLogsDescending[T LogT](logs []T) {
+	slices.SortFunc(logs, func(a, b T) int {
+		return b.GetExecutedDate().Compare(a.GetExecutedDate())
+	})
+}
 func ReadToJson(texts []string) (any, error) {
 	results := DimeTransactionLogResponse{Fee: []DimeTransactionFee{}, DividendLogs: []DimeTransactionDividend{}, StockLogs: []DimeTransactionStock{}}
 	for _, text := range texts {
@@ -54,6 +74,9 @@ func ReadToJson(texts []string) (any, error) {
 		results.DividendLogs = append(results.DividendLogs, json.DividendLogs...)
 		results.StockLogs = append(results.StockLogs, json.StockLogs...)
 	}
+	sortLogsDescending(results.StockLogs)
+	sortLogsDescending(results.Fee)
+	sortLogsDescending(results.DividendLogs)
 	return &results, nil
 }
 func parseTextToTransactionReq(transactions []string) (*DimeTransactionRequest, error) {
