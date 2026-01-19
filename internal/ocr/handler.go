@@ -22,7 +22,7 @@ func (h *OCRHandler) HandleUpload(do func(text []string) (any, error)) echo.Hand
 		if err != nil {
 			return common.Error(c, err)
 		}
-		texts, err := h.svc.ProcessImages(reader)
+		texts, err := h.svc.ProcessImages(c, reader)
 		if err != nil {
 			return common.Error(c, err)
 		}

@@ -1,24 +1,17 @@
 package main
 
-/*
-#include <malloc.h>
-*/
-import "C"
-
 import (
-	dimets "ITG/internal/dime/transaction"
-	"ITG/internal/ocr"
-	"fmt"
-	"io"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
-	"sync"
+	"runtime"
+	"runtime/debug"
+
+	dimets "ITG/internal/dime/transaction"
+	"ITG/internal/ocr"
 
 	"github.com/labstack/echo-contrib/pprof"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/otiai10/gosseract/v2"
 )
 
 type DimeBody struct {
@@ -29,108 +22,22 @@ type DimeBody struct {
 func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "hi from itg")
 }
-
-var (
-	ocrClient *gosseract.Client
-	mutex     sync.Mutex
-)
-var sem = make(chan struct{}, 2)
-var max_queue = 6
-var waitQueue = make(chan struct{}, max_queue)
-
-func ocrHandlerSafe(c echo.Context) error {
-	select {
-	case waitQueue <- struct{}{}:
-		defer func() {
-			<-waitQueue
-		}()
-	default:
-		return c.JSON(http.StatusTooManyRequests, map[string]string{
-			"error": fmt.Sprintf("คิวเต็ม %d / %d กรุณาลองใหม่ในอีก 30 วินาที", len(waitQueue), max_queue),
-		})
-	}
-	mutex.Lock()
-	defer mutex.Unlock()
-	reader, err := c.Request().MultipartReader()
-	if err != nil {
-		return err
-	}
-
-	var results []string
-
-	for {
-		part, err := reader.NextPart()
-		if err == io.EOF {
-			break
+func MaxQueueMiddleware(queue chan struct{}) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			select {
+			case queue <- struct{}{}:
+				defer func() { <-queue }()
+				return next(c)
+			default:
+				return c.JSON(http.StatusTooManyRequests, map[string]string{
+					"message": "Server busy, please try again later",
+				})
+			}
 		}
-		if part.FormName() != "images" {
-			continue
-		}
-
-		tmpFile, err := os.CreateTemp("", "ocr-*.png")
-		if err != nil {
-			return err
-		}
-		tmpPath := tmpFile.Name()
-		_, err = io.Copy(tmpFile, part)
-		tmpFile.Close()
-		ocrClient.SetImage(tmpPath)
-		text, _ := ocrClient.Text()
-		results = append(results, text)
-		os.Remove(tmpFile.Name())
 	}
-	// ocrClient.Close()
-
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "success",
-		"results": results,
-	})
 }
-
-func ocrHandler(c echo.Context) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-	reader, err := c.Request().MultipartReader()
-	if err != nil {
-		return err
-	}
-
-	var results []string
-
-	for {
-		part, err := reader.NextPart()
-		if err == io.EOF {
-			break
-		}
-		if part.FormName() != "images" {
-			continue
-		}
-
-		tmpFile, err := os.CreateTemp("", "ocr-*.png")
-		if err != nil {
-			return err
-		}
-		tmpPath := tmpFile.Name()
-		_, err = io.Copy(tmpFile, part)
-		tmpFile.Close()
-		ocrClient.SetImage(tmpPath)
-		text, _ := ocrClient.Text()
-		results = append(results, text)
-		os.Remove(tmpFile.Name())
-	}
-	// ocrClient.Close()
-
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "success",
-		"results": results,
-	})
-}
-
 func main() {
-	func() {
-		ocrClient = gosseract.NewClient()
-		ocrClient.SetLanguage("eng")
-	}()
 	ocrService := ocr.NewOCRService(6)
 	ocrHandler := ocr.NewOCRHandler(ocrService)
 	e := echo.New()
@@ -140,8 +47,16 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 	e.Use(middleware.Recover())
+	ocrQueue := make(chan struct{}, 5)
+	ocrGroup := e.Group("/dime")
+	ocrGroup.Use(MaxQueueMiddleware(ocrQueue))
 	e.GET("/", hello)
-	e.POST("dime", ocrHandler.HandleUpload(dimets.ReadToJson))
+	ocrGroup.POST("", ocrHandler.HandleUpload(dimets.ReadToJson))
+	e.GET("clear", func(c echo.Context) error {
+		runtime.GC()
+		debug.FreeOSMemory()
+		return c.String(http.StatusOK, "cleared")
+	})
 	pprof.Register(e)
 	e.Logger.Fatal(e.Start(":8081"))
 }

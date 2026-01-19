@@ -4,17 +4,17 @@ const options = {
   stages: [
     { duration: "30s", target: 5 },
     { duration: "30s", target: 15 },
-    { duration: "5m", target: 60 },
-    { duration: "10m", target: 40 },
-    { duration: "10m", target: 80 },
-    { duration: "20m", target: 150 },
-    { duration: "20m", target: 60 },
-    { duration: "30s", target: 100 },
+    { duration: "15s", target: 60 },
+    // { duration: "10m", target: 40 },
+    // { duration: "10m", target: 80 },
+    { duration: "3m", target: 10 },
+    // { duration: "30s", target: 100 },
+    // { duration: "30s", target: 20 },
     { duration: "30s", target: 0 },
   ],
 };
 const img = open(
-  "/home/atippa/Documents/ITG/imageTest/dime/en/transactions/1.jpg",
+  "C:/Users/aston/Desktop/workshop/ITG/imageTest/dime/en/transactions/1.jpg",
   "b",
 );
 

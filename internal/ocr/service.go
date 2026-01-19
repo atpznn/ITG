@@ -1,12 +1,12 @@
 package ocr
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"sync"
 
+	"github.com/labstack/echo/v4"
 	"github.com/otiai10/gosseract/v2"
 )
 
@@ -24,40 +24,55 @@ func NewOCRService(maxQueue int) *OCRService {
 	}
 }
 
-func (s *OCRService) ProcessImages(reader *multipart.Reader) ([]string, error) {
-	select {
-	case s.queue <- struct{}{}:
-		defer func() { <-s.queue }()
-	default:
-		return nil, fmt.Errorf("queue full")
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *OCRService) ProcessImages(c echo.Context, reader *multipart.Reader) ([]string, error) {
 	var results []string
 	for {
 		part, err := reader.NextPart()
 		if err == io.EOF {
 			break
 		}
-		if part.FormName() != "images" {
-			continue
-		}
 		if err != nil {
 			return nil, err
 		}
+		res, err := func() (string, error) {
+			defer part.Close()
 
-		tmpFile, err := os.CreateTemp("", "ocr-*.png")
+			if part.FormName() != "images" {
+				return "", nil
+			}
+			tmpFile, err := os.CreateTemp("", "ocr-*.png")
+			if err != nil {
+				return "", err
+			}
+			tmpPath := tmpFile.Name()
+
+			defer os.Remove(tmpPath)
+			defer tmpFile.Close()
+
+			if _, err = io.Copy(tmpFile, part); err != nil {
+				return "", err
+			}
+			tmpFile.Close()
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			select {
+			case <-c.Request().Context().Done():
+				return "", c.Request().Context().Err()
+			default:
+			}
+
+			if err := s.client.SetImage(tmpPath); err != nil {
+				return "", err
+			}
+			return s.client.Text()
+		}()
+
 		if err != nil {
 			return nil, err
 		}
-		tmpPath := tmpFile.Name()
-		_, err = io.Copy(tmpFile, part)
-		tmpFile.Close()
-		s.client.SetImage(tmpPath)
-		text, _ := s.client.Text()
-		results = append(results, text)
-		os.Remove(tmpFile.Name())
+		if res != "" {
+			results = append(results, res)
+		}
 	}
 	return results, nil
 }
